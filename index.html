@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#15130f">
 <meta name="description" content="One elevator. One floor. A tactile escape puzzle inspired by the classic 100 Floors and a real elevator keypad.">
 <title>Lobby Lockout · Floor 27</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='6' fill='%233c352b'/%3E%3Cpath d='M8 23 20 8 32 23H25V34H15V23Z' fill='%2369cf28'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 <link rel="preload" as="image" href="assets/room.webp">
 <link rel="preload" as="image" href="assets/doors.webp">
 <script src="engine.js" defer></script>
-<script src="game.js" defer></script>
+<script src="game.js?v=3" defer></script>
 </head>
 <body>
 <main id="stage" aria-label="Lobby Lockout, floor 27">
@@ -26,7 +26,7 @@
     <button id="directory" aria-label="Inspect the floor directory"><span class="miniDirectory">DIRECTORY<br><b>○ &nbsp;18</b><b>△ &nbsp;24</b><b>□ &nbsp;32</b></span></button>
     <button id="panelHot" aria-label="Inspect the destination keypad"></button>
     <span id="readerLight" aria-hidden="true"></span>
-    <button id="coin" class="sprite coin" aria-label="Pick up the brass token" hidden></button>
+    <button id="coin" aria-label="Pick up the brass token" hidden><span class="sprite coin" aria-hidden="true"></span></button>
     <button id="mat" aria-label="Move the floor mat"><span class="sprite matArt" aria-hidden="true"></span></button>
   </section>
   <section id="panel" class="view" aria-label="Destination keypad" hidden>

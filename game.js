@@ -9,7 +9,7 @@
   try { state = Puzzle.restore(JSON.parse(localStorage.getItem(STORAGE))); sound = localStorage.getItem(STORAGE + '-sound') !== 'off'; } catch (_) {}
   const save = () => { try { localStorage.setItem(STORAGE, JSON.stringify(state)); } catch (_) {} };
   const sprite = type => `<span class="sprite ${type}" aria-hidden="true"></span>`;
-  const cardPrint = '<div class="cardPrint"><small>STAFF · SERVICE ROUTE</small><b>○ △ □</b><em>READ LEFT TO RIGHT</em></div>';
+  const cardPrint = '<div class="cardPrint"><small>STAFF · SERVICE ROUTE</small><b>○ △ □</b></div>';
   function resize() {
     const w = window.visualViewport?.width || innerWidth;
     const h = window.visualViewport?.height || innerHeight;
@@ -17,6 +17,11 @@
     $('stage').style.transform = `translate(-50%,-50%) scale(${scale})`;
   }
   resize(); addEventListener('resize', resize); window.visualViewport?.addEventListener('resize', resize);
+  // Keep browser gestures from zooming the fixed game canvas, including Safari's
+  // gesture events. Do not cancel touchend: taps must still produce clicks.
+  for (const type of ['dblclick', 'gesturestart', 'gesturechange', 'gestureend']) {
+    $('stage').addEventListener(type, event => event.preventDefault(), {passive: false});
+  }
   function tone(freq, duration = .08, type = 'sine', delay = 0, gain = .055) {
     if (!sound) return;
     if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
@@ -50,7 +55,9 @@
     const before = state;
     const result = Puzzle.act(state, action, value);
     state = result.state; save(); effect(result.effect);
-    if (result.message) toast(result.message);
+    // Ordinary inspection and item use stay silent; only show machine outcomes.
+    if (result.effect === 'power' || result.effect === 'scan' ||
+        (action === 'digit' && before.scanned && result.effect === 'deny')) toast(result.message);
     if (!state.coin && selected === 'coin') selected = null;
     render();
     if (!before.hatch && state.hatch) show('circuit');
@@ -80,8 +87,6 @@
     if (type === 'card' && selected === type) { returnView = view; show('card'); return; }
     selected = selected === type ? null : type;
     render(); effect('tap');
-    if (selected === 'coin') toast('Brass token selected.');
-    if (selected === 'card') toast('Staff card selected. Tap it again to inspect.');
   }
   function render() {
     $('mat').classList.toggle('moved', state.mat);
@@ -129,7 +134,7 @@
     if (view === 'directory') {
       $('inspection').innerHTML = '<div class="plaque"><h2>FLOOR DIRECTORY</h2><div class="dirRow"><span>△</span><span>24</span></div><div class="dirRow"><span>□</span><span>32</span></div><div class="dirRow"><span>○</span><span>18</span></div><p>BUILDING SERVICES · LIFT C</p></div>';
     } else if (view === 'card') {
-      $('inspection').innerHTML = `<div class="cardInspect sprite card">${cardPrint}</div><p class="cardCaption">The back of the staff card.<br>Three symbols are printed in a row.</p><button class="inspectUse" id="useCard">Select card</button>`;
+      $('inspection').innerHTML = `<div class="cardInspect sprite card">${cardPrint}</div><p class="cardCaption">Staff access card · reverse</p><button class="inspectUse" id="useCard">Select card</button>`;
     } else if (view === 'circuit') {
       $('inspection').innerHTML = '<div class="enclosure"><h2>CARD READER · SERVICE PANEL</h2><div class="pcb"><span class="pcbLabel">12V IN →</span><span class="pcbLabel out">→ READER</span><span class="terminal start"></span><span id="output" class="terminal end"></span><div id="tiles" class="tileGrid"></div><span class="screwDecor"></span></div><div id="circuitNote" class="boardNote"></div><button id="cardPocket" class="cardPocket"></button></div>';
       renderCircuit();
@@ -138,12 +143,10 @@
   function reader() {
     if (selected === 'card') run('scan');
     else if (state.hatch && !state.power) show('circuit');
-    else if (state.scanned) toast('Card accepted. Enter the service route.');
-    else if (state.power) toast('Select your staff card, then present it here.');
-    else toast('No response. Two slotted screws hold the cover.');
+    else effect('deny');
   }
   function screw(i) {
-    if (selected !== 'coin') { toast('A slotted screw. A thin metal edge could turn it.'); effect('tap'); }
+    if (selected !== 'coin') effect('tap');
     else run('screw',i);
   }
   function arrive() {
@@ -181,7 +184,7 @@
   }
   function reset() {
     arrival.forEach(clearTimeout); arrival = [];
-    state = Puzzle.fresh(); selected = null; hintLevel = 0; save(); closeModal(); show('room'); toast('Find a way into elevator C.');
+    state = Puzzle.fresh(); selected = null; hintLevel = 0; save(); closeModal(); show('room');
   }
   function win() {
     openModal('<div class="winMark">↑</div><h1>FLOOR CLEAR</h1><p>The elevator is yours.</p><button data-modal="reset">Play again</button><button data-modal="resume" class="secondary">Back to the elevator</button>');
@@ -190,14 +193,14 @@
   $('directory').onclick = () => { effect('tap'); show('directory'); };
   $('back').onclick = goBack;
   $('coin').onclick = () => run('coin');
-  $('doors').onclick = () => { $('doors').classList.remove('rattle'); void $('doors').offsetWidth; $('doors').classList.add('rattle'); effect('deny'); toast('The elevator is waiting for authorisation.'); };
+  $('doors').onclick = () => { $('doors').classList.remove('rattle'); void $('doors').offsetWidth; $('doors').classList.add('rattle'); effect('deny'); };
   $('enter').onclick = () => run('enter');
   $('reader').onclick = reader;
   $('screw0').onclick = () => screw(0); $('screw1').onclick = () => screw(1);
   $('maintenance').onclick = () => show('circuit');
-  $('helpKey').onclick = () => toast('STAFF: present card, then enter service route. * clears · − deletes.',4300);
+  $('helpKey').onclick = menu;
   $('lockKey').onclick = () => run('clear');
-  $('accessibility').onclick = () => { tone(659,.25); tone(523,.35,'sine',.3); toast('The call chimes, but the elevator remains locked.'); };
+  $('accessibility').onclick = () => { tone(659,.25); tone(523,.35,'sine',.3); };
   const keyValues = ['1','2','3','4','5','6','7','8','9','*','0','-'];
   keyValues.forEach((value,i) => {
     const button = document.createElement('button');
@@ -214,7 +217,7 @@
     if (tile) run('rotate',Number(tile.dataset.tile));
     else if (e.target.closest('#cardPocket') && !state.card) {
       run('card'); selected = 'card'; returnView = 'circuit'; show('card');
-    } else if (e.target.closest('#useCard')) { selected = 'card'; show(returnView); toast('Staff card selected.'); }
+    } else if (e.target.closest('#useCard')) { selected = 'card'; show(returnView); }
   };
   // Items support both tap-to-select and direct dragging onto the reader or a screw.
   let drag = null, suppressSlotClick = false;
@@ -240,7 +243,6 @@
         const target = document.elementFromPoint(e.clientX,e.clientY)?.closest('button');
         if (target?.id === 'reader' && drag.type === 'card') reader();
         else if (/^screw[01]$/.test(target?.id || '') && drag.type === 'coin') screw(Number(target.id.slice(-1)));
-        else toast(drag.type === 'card'?'Staff card selected.':'Brass token selected.');
         render();
       }
       drag = null;
@@ -285,7 +287,7 @@
   const images = [...document.images].map(img => img.complete ? Promise.resolve() : new Promise(resolve => {img.onload=resolve;img.onerror=resolve;}));
   Promise.all(images).then(() => {
     $('loading').hidden = true; render();
-    if (state.complete) win(); else if (!state.moves) toast('Find a way into elevator C.',3500);
+    if (state.complete) win();
   });
   show('room');
 })();

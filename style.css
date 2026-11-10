@@ -12,3 +12,9 @@
 #modal{position:absolute;z-index:20;inset:0;background:#0c0d0bba;display:flex;align-items:center;justify-content:center}.dialog{width:360px;padding:27px 25px;background:linear-gradient(#544b3d,#302b25);border:5px ridge #a8997e;box-shadow:0 12px 40px #000c;text-align:center;color:#e8dfcb}.dialog h1,.dialog h2{font:24px Georgia,serif;letter-spacing:2px;margin:5px 0 16px}.dialog p{font-size:14px;line-height:1.6;color:#d7cbb7}.dialog button{display:block;width:100%;padding:12px;margin-top:9px;border:1px solid #b3a185;background:linear-gradient(#7c715e,#514839);box-shadow:0 2px 3px #0006;color:#fff3dc;font-size:14px}.dialog .secondary{background:transparent;color:#c4b9a6;border-color:#706654}.dialog small{display:block;margin-top:20px;font-size:10px;line-height:1.5;color:#9d9487}.hintText{border-top:1px solid #a4916c66;padding-top:14px;min-height:60px}.winMark{font:40px Georgia,serif;color:#a3d765}#loading{position:absolute;z-index:30;inset:0;background:#211e18;display:flex;align-items:center;justify-content:center;flex-direction:column;font:22px Georgia,serif;letter-spacing:4px;color:#c5b793}#loading span{font:12px Arial,sans-serif;letter-spacing:1px;margin-top:20px}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 .screenKey{width:94px;height:36px;filter:drop-shadow(0 2px 1px #53647366)}
+/* Keep the moved mat completely clear of the coin, with a generous tap target. */
+#mat.moved{transform:translate(-135px,9px) rotate(-7deg)}
+#coin{left:253px;top:543px;width:60px;height:60px}
+#coin .sprite{position:absolute;left:13px;top:13px;width:33px;height:33px;pointer-events:none}
+/* All movement belongs to the game; browser double-tap and pinch gestures do not. */
+body,#stage{touch-action:none;overscroll-behavior:none}
